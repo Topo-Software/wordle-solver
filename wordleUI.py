@@ -14,12 +14,35 @@ word4=np.zeros((5,2),dtype=str)
 word5=np.zeros((5,2),dtype=str)
 word6=np.zeros((5,2),dtype=str)
 
-wordleArray = [word1,word2,word3,word4,word5,word6]
+wordleArray = np.array([word1,word2,word3,word4,word5,word6],dtype=str)
 wordConfirmed = [False,False,False,False,False,False]
 #wordleCheckArray = np.zeros((6,5),dtype=np.int32)
 
+#            unused letter | used but wrong position | used and correct position
+states = [['u','bg-gray-400'],['y','bg-yellow-400'],['g','bg-green-400']] 
 
-def runPython(pointerevent):
+def printToOutput(text):
+    pyscript.write("output",text)
+
+#set all cells to gray
+def setAllCellsToGray():
+    wordleArray[:,:,1]=states[0][0]
+    updateAllClassNames()
+
+def updateAllClassNames():
+    for wordIndex, word in enumerate(wordleArray):
+        for letterIndex, letter in enumerate(word):
+            elementName="wordle-cell-"+f"{wordIndex}"+"-"+f"{letterIndex}"
+            Element(elementName).element.classList.add(getClassNameFromState(wordleArray[wordIndex][letterIndex][1]))
+
+def getClassNameFromState(state):
+    for stateName, stateClass in states:
+        if state==stateName:
+            return stateClass
+
+setAllCellsToGray()
+
+def letterInput(pointerevent):
     try:
         key = pointerevent.target.id.replace("wordle-keyboard-cell-","")
         #add key to wordleArray
@@ -75,12 +98,43 @@ def getActiveWordAndLetterAndLast():
 def showWordleArray():
     for wordIndex, word in enumerate(wordleArray):
         for letterIndex, letter in enumerate(word):
-            pyscript.write("wordle-cell-"+f"{wordIndex}"+"-"+f"{letterIndex}",f"{letter[0]}")
+            elementName="wordle-cell-"+f"{wordIndex}"+"-"+f"{letterIndex}"
+            pyscript.write(elementName,f"{letter[0]}")
+            
 
-def printToOutput(text):
-    pyscript.write("output",text)
+def clickOnWordleCell(pointerevent):
+    try:
+        cellRowIndex= int(pointerevent.target.id.replace("wordle-cell-","")[0])
+        cellColumnIndex= int(pointerevent.target.id[-1])
+        toggleCellThroughStates(cellRowIndex,cellColumnIndex)
+    except Exception as e:
+        print(e)
 
-function_proxy = create_proxy(runPython)
+
+
+
+def toggleCellThroughStates(row,column):
+    elementName="wordle-cell-"+f"{row}"+"-"+f"{column}"
+    elementClassList = Element(elementName).element.classList
+
+    if wordleArray[row][column][1]=="u":
+        elementClassList.remove(getClassNameFromState("u"))
+        elementClassList.add(getClassNameFromState("y"))
+        wordleArray[row][column][1]="y"
+    elif wordleArray[row][column][1]=="y":
+        elementClassList.remove(getClassNameFromState("y"))
+        elementClassList.add(getClassNameFromState("g"))
+        wordleArray[row][column][1]="g"
+    elif wordleArray[row][column][1]=="g":
+        elementClassList.remove(getClassNameFromState("g"))
+        elementClassList.add(getClassNameFromState("u"))
+        wordleArray[row][column][1]="u"
+    
+
+
+
+function_proxy = create_proxy(letterInput)
+function2_proxy = create_proxy(clickOnWordleCell)
 
 #split alphabet into array
 keyboard = []
@@ -92,6 +146,11 @@ keyboard.append("backspace")
 for key in keyboard:
     idName= "wordle-keyboard-cell-"+key
     document.getElementById(idName).addEventListener("click", function_proxy)
+
+for wordIndex, word in enumerate(wordleArray):
+    for letterIndex, letter in enumerate(word):
+        idName= "wordle-cell-"+str(wordIndex) + "-" +str(letterIndex)
+        document.getElementById(idName).addEventListener("click", function2_proxy)
 
 
 

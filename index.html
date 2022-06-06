@@ -6,14 +6,22 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wordle Solver</title>
-    <meta name="description" content="Wordle Solver made with in PyScript">
+    <meta name="description" content="Wordle Solver made with PyScript">
     <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
     <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
     <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet'>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-230326474-1">
+    </script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-230326474-1');
+    </script>
     <style>
     body {
         font-family: 'Quicksand';
-        background-color: #fafafa;
+        background-color: #F7F7F6;
     }
 
     </style>
@@ -26,8 +34,15 @@
     <py-script src="./wordleUI.py"> </py-script>
 
     <div id="wordle-container" class="absolute inset-0 flex flex-col justify-between">
-        <h1 class="text-3xl font-bold text-center p-3">Wordle Solver</h1>
-        <div id="wordle-array" class="">
+        <div class="flex flex-row justify-center items-center align-center">
+            <h1 class="text-3xl font-bold text-center p-1 mt-3">Wordle Solver</h1>
+            <button id="wordle-clear-button" class="bg-gray-200 hover:bg-gray-500 hover:text-white p-1 m-1 mt-3 rounded w-20 self-center border border-gray-400 rounded shadow">Clear</button>
+        </div>
+        <div class="flex flex-col items-center">
+            <p>by</p>
+            <h3 class="text-xl"> Topo Software</h3>
+        </div>
+        <div id="wordle-array" class="bg-green">
             <script>
                 //create 5x6 div array
                 var wordleArray = [];
@@ -49,9 +64,10 @@
                 }
             </script>
         </div>
-        <div id="output" class="flex flex-col justify-center items-center p-3 h-10"></div>
+        <div id="output" class="flex flex-col justify-center items-center p-3 h-2 empty:h-2 font-semibold"></div>
+        
         <!-- keyboard that sticks to bottom of the screen -->
-        <div id="keyboard" class="flex flex-col justify-center items-center p-3 mb-10">
+        <div id="keyboard" class="flex flex-col justify-center items-center p-3 mb-3">
             <script>
                 //create keyboard input
                 var keyboard = document.createElement("div");

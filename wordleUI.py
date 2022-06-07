@@ -51,10 +51,12 @@ def clickOnKeyBoardKey(event):
             key = validateKey(event)
         else:
             key = event.target.id.replace("wordle-keyboard-cell-","")
+
         
         activeWordIndex,activeLetterIndex,lastLetter,submittedWord = getActiveWordAndLetterAndLast()
         updateWordleArray(key,activeWordIndex,activeLetterIndex,lastLetter,submittedWord)
         updateWordleScreen()
+        mainClickEvent()
     except Exception as e:
         print(e)
 
@@ -271,7 +273,7 @@ def filterRemainingWords(allWordleWords,knownLetters,usedLetters,usedLettersWith
         remainingWordleWords = filterWordsAccordingToKnownPositions(remainingWordleWords,lettersWithKnownPosition)
         remainingWordleWords = filterWordsAccordingToAvailableLetters(remainingWordleWords,availableLetters)
         remainingWordleWords = filterWordsAccordingToKnownLetterPositions(remainingWordleWords,availableLettersWithPosition)
-        #print(f"remainingWordleWords: {remainingWordleWords}")
+        print(f"remainingWordleWords: {remainingWordleWords}")
         
         
     except Exception as e:
@@ -368,7 +370,7 @@ def clickOnWordleCell(pointerevent):
 def mainClickEvent():
     try:
         knownLetters, usedLetters, usedLettersWithUnknownPosition, lettersWithKnownPosition = getAllLetterInfo()
-        #print(f"knownletters: {knownLetters}",f"usedletters: {usedLetters}",f"usedletterswithunknownposition: {usedLettersWithUnknownPosition}",f"letterswithknownposition: {lettersWithKnownPosition}") #SuperDebugTool
+        print(f"knownletters: {knownLetters}",f"usedletters: {usedLetters}",f"usedletterswithunknownposition: {usedLettersWithUnknownPosition}",f"letterswithknownposition: {lettersWithKnownPosition}") #SuperDebugTool
         remainingWordleWords=filterRemainingWords(originalWordList,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition)
         top5Words=rankRemainingWords(remainingWordleWords,originalWordList)
             #roundvalues in top5Words to 2 decimal places

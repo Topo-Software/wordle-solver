@@ -54,7 +54,7 @@ def clickOnKeyBoardKey(event):
         
         activeWordIndex,activeLetterIndex,lastLetter,submittedWord = getActiveWordAndLetterAndLast()
         updateWordleArray(key,activeWordIndex,activeLetterIndex,lastLetter,submittedWord)
-        showWordleArray()
+        updateWordleScreen()
     except Exception as e:
         print(e)
 
@@ -96,7 +96,7 @@ def updateWordleArray(key,activeWordIndex,activeLetterIndex,lastLetter,submitted
 def wordConfirmedFunc(activeWordIndex):
     addClass(activeWordIndex,"font-bold")
     # await asyncio.sleep(2)
-    # removeClass(activeWordIndex,"font-bold")
+    # 
 
 def addClass(activeWordIndex,className):
     for cell in range(5):
@@ -132,12 +132,11 @@ def getActiveWordAndLetterAndLast():
             elif wordleArray[wordIndex][letterIndex][0]== "": #if letter is empty
                 return wordIndex, letterIndex, lastLetter,submitWord
 
-def showWordleArray():
+def updateWordleScreen():
     for wordIndex, word in enumerate(wordleArray):
         for letterIndex, letter in enumerate(word):
             elementName="wordle-cell-"+f"{wordIndex}"+"-"+f"{letterIndex}"
             pyscript.write(elementName,f"{letter[0]}")
-            
 
 
 def getAllLetterInfo():
@@ -169,8 +168,10 @@ def getKnownLetters():
     knownLetters=[]
     for wordIndex, word in enumerate(wordleArray):
         for letterIndex, letter in enumerate(word):
-            if letter[1]=="y" or letter[1]=="g":
-                knownLetters.append(letter[0].lower())
+            if letter[0] not in knownLetters:
+                if letter[1]=="y" or letter[1]=="g":
+                    knownLetters.append(letter[0].lower())
+            
     return knownLetters
 
 def getAllUsedLetters():
@@ -270,84 +271,88 @@ def filterRemainingWords(allWordleWords,knownLetters,usedLetters,usedLettersWith
         remainingWordleWords = filterWordsAccordingToKnownPositions(remainingWordleWords,lettersWithKnownPosition)
         remainingWordleWords = filterWordsAccordingToAvailableLetters(remainingWordleWords,availableLetters)
         remainingWordleWords = filterWordsAccordingToKnownLetterPositions(remainingWordleWords,availableLettersWithPosition)
-        if remainingWordleWords == []:
-            printToOutput("No possible words found")
-            return False
+        #print(f"remainingWordleWords: {remainingWordleWords}")
+        
         
     except Exception as e:
+        print(f"Error filtering words: {e}")
         print(e)
 
     return remainingWordleWords
 
 def rankRemainingWords(remainingWordleWords,originalWordList):
-    # Returns top 5 ranked words in a list
+    try:
+        # Returns top 5 ranked words in a list
 
-    letterCountDict = {}
-    normalizedLetterCountDict = {}
-    letterMultiplesArray = {}
-    normalizedLetterMultiplesDict = {}
-    wordScoreDict = {}
-    wordScoreMultipleDict = {}
-    totalScoreDict = {}
+        letterCountDict = {}
+        normalizedLetterCountDict = {}
+        letterMultiplesArray = {}
+        normalizedLetterMultiplesDict = {}
+        wordScoreDict = {}
+        wordScoreMultipleDict = {}
+        totalScoreDict = {}
 
-    for letter in alphabetLower:
-        letterCountDict[letter] = [0,0,0,0,0]
+        for letter in alphabetLower:
+            letterCountDict[letter] = [0,0,0,0,0]
 
-    for word in originalWordList:
-        for index, letter in enumerate(word):
-            letterCountDict[letter][index] += 1
+        for word in originalWordList:
+            for index, letter in enumerate(word):
+                letterCountDict[letter][index] += 1
 
-    for letter in alphabetLower:
-        normalizedLetterCountDict[letter] = [0,0,0,0,0]
-        for index, count in enumerate(letterCountDict[letter]):
-            normalizedLetterCountDict[letter][index] = count/len(remainingWordleWords)
+        for letter in alphabetLower:
+            normalizedLetterCountDict[letter] = [0,0,0,0,0]
+            for index, count in enumerate(letterCountDict[letter]):
+                normalizedLetterCountDict[letter][index] = count/len(originalWordList)
 
-    #determine probability duplicate letters in remaining word list index is letter number of occurrences
-    for letter in alphabetLower:
-        letterMultiplesArray[letter] = [0,0,0,0,0]
+        #determine probability duplicate letters in remaining word list index is letter number of occurrences
+        for letter in alphabetLower:
+            letterMultiplesArray[letter] = [0,0,0,0,0]
 
-    for word in originalWordList:
-        for letter in word:
-            letterMultiplesArray[letter][word.count(letter)-1] += 1
+        for word in originalWordList:
+            for letter in word:
+                letterMultiplesArray[letter][word.count(letter)-1] += 1
 
-    # normalise letterMultiplesArray
-    for letter in alphabetLower:
-        normalizedLetterMultiplesDict[letter] = [0,0,0,0,0]
-        for index, count in enumerate(letterMultiplesArray[letter]):
-            normalizedLetterMultiplesDict[letter][index] = count/len(remainingWordleWords)
+        # normalise letterMultiplesArray
+        for letter in alphabetLower:
+            normalizedLetterMultiplesDict[letter] = [0,0,0,0,0]
+            for index, count in enumerate(letterMultiplesArray[letter]):
+                normalizedLetterMultiplesDict[letter][index] = count/len(originalWordList)
 
-    #rate all words in remainingWordleWords return dictionary with word as key and score as value
-    for word in remainingWordleWords:
-        score = 0
-        for index, letter in enumerate(word):
-            score += normalizedLetterCountDict[letter][index]
-        wordScoreDict[word] = score
+        #rate all words in remainingWordleWords return dictionary with word as key and score as value
+        for word in remainingWordleWords:
+            score = 0
+            for index, letter in enumerate(word):
+                score += normalizedLetterCountDict[letter][index]
+            wordScoreDict[word] = score
 
-    #rate all words according to multiple of letter
-    for word in remainingWordleWords:
-        score = 0
-        for index, letter in enumerate(word):
-            score += normalizedLetterMultiplesDict[letter][index]
-        wordScoreMultipleDict[word] = score
+        #rate all words according to multiple of letter
+        for word in remainingWordleWords:
+            score = 0
+            for index, letter in enumerate(word):
+                score += normalizedLetterMultiplesDict[letter][index]
+            wordScoreMultipleDict[word] = score
 
-    for word in remainingWordleWords:
-        for index, letter in enumerate(word):
-            #count letter in word
-            multiple=word.count(letter)
-            totalScoreDict[word] = normalizedLetterCountDict[letter][index] + normalizedLetterMultiplesDict[letter][multiple]
+        for word in remainingWordleWords:
+            for index, letter in enumerate(word):
+                #count letter in word
+                multiple=word.count(letter)
+                totalScoreDict[word] = normalizedLetterCountDict[letter][index] + normalizedLetterMultiplesDict[letter][multiple]
 
-    #sort wordScoreDict by value
-    # sortedWordScoreDict = sorted(wordScoreDict.items(), key=lambda x: x[1], reverse=True)
-    # sortedWordScoreMultipleDict = sorted(wordScoreMultipleDict.items(), key=lambda x: x[1], reverse=True)
-    sortedTotalScoreDict = sorted(totalScoreDict.items(), key=lambda x: x[1], reverse=True)
-    # round scores to 2 decimal places
-    # print(sortedWordScoreDict)
-    # print(sortedWordScoreMultipleDict)
+        #sort wordScoreDict by value
+        # sortedWordScoreDict = sorted(wordScoreDict.items(), key=lambda x: x[1], reverse=True)
+        # sortedWordScoreMultipleDict = sorted(wordScoreMultipleDict.items(), key=lambda x: x[1], reverse=True)
+        sortedTotalScoreDict = sorted(totalScoreDict.items(), key=lambda x: x[1], reverse=True)
+        # round scores to 2 decimal places
+        # print(sortedWordScoreDict)
+        # print(sortedWordScoreMultipleDict)
 
-    #return top 5 words in sortedWordScoreDict
+        #return top 5 words in sortedWordScoreDict
 
-    #round scores to 2 decimal places
-    return sortedTotalScoreDict[:5]
+        #round scores to 2 decimal places
+        return sortedTotalScoreDict[:5]
+    except Exception as e:
+        print(f"Error ranking words: {e}")
+        print(e)
 
 ## Main
 def clickOnWordleCell(pointerevent):
@@ -357,32 +362,46 @@ def clickOnWordleCell(pointerevent):
         toggleCellThroughStates(cellRowIndex,cellColumnIndex)
         mainClickEvent()
     except Exception as e:
+        print(f"Error clicking on wordle cell: {e}")
         print(e)
 
 def mainClickEvent():
-    knownLetters, usedLetters, usedLettersWithUnknownPosition, lettersWithKnownPosition = getAllLetterInfo()
-    #print(f"knownletters: {knownLetters}",f"usedletters: {usedLetters}",f"usedletterswithunknownposition: {usedLettersWithUnknownPosition}",f"letterswithknownposition: {lettersWithKnownPosition}") #SuperDebugTool
-    remainingWordleWords=filterRemainingWords(originalWordList,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition)
-    top5Words=rankRemainingWords(remainingWordleWords,originalWordList)
-        #roundvalues in top5Words to 2 decimal places
-    for index, word in enumerate(top5Words):
-        top5Words[index] = (word[0],round(word[1],2))
-        #pretty print top5Words
+    try:
+        knownLetters, usedLetters, usedLettersWithUnknownPosition, lettersWithKnownPosition = getAllLetterInfo()
+        #print(f"knownletters: {knownLetters}",f"usedletters: {usedLetters}",f"usedletterswithunknownposition: {usedLettersWithUnknownPosition}",f"letterswithknownposition: {lettersWithKnownPosition}") #SuperDebugTool
+        remainingWordleWords=filterRemainingWords(originalWordList,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition)
+        top5Words=rankRemainingWords(remainingWordleWords,originalWordList)
+            #roundvalues in top5Words to 2 decimal places
+        for index, word in enumerate(top5Words):
+            top5Words[index] = (word[0],round(word[1],2))
+            #pretty print top5Words
+        printToOutput(top5WordsPrettyPrint(top5Words))
 
-    printToOutput(f"Top words: {top5Words[0][0]}, {top5Words[1][0]}, {top5Words[2][0]}, {top5Words[3][0]}, {top5Words[4][0]}")
+        #printToOutput(f"Top words: {top5Words[0][0]}, {top5Words[1][0]}, {top5Words[2][0]}, {top5Words[3][0]}, {top5Words[4][0]}")
+    except Exception as e:
+        print(f"Error main click event: {e}")
+        print(e)
 
-
+def top5WordsPrettyPrint(top5Words):
+    printString = ""
+    if top5Words == []:
+        printString = "No possible words found"
+    else:
+        for index, word in enumerate(top5Words):
+            printString += f"{word[0]} "
+    return printString
 
 def clearButtonEvent(event):
     global wordleArray 
     global wordConfirmed
     wordleArray = resetWordleArray()
     wordConfirmed = [False,False,False,False,False,False]
-    
+    for i in range(len(wordConfirmed)):
+        removeClass(i,"font-bold")
     resetAllClassLists()
     setAllCellsToGray()
     printToOutput("")
-    showWordleArray()
+    updateWordleScreen()
 
 def resetAllClassLists():
     for word in range(6):

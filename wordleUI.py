@@ -370,7 +370,7 @@ def clickOnWordleCell(pointerevent):
 def mainClickEvent():
     try:
         knownLetters, usedLetters, usedLettersWithUnknownPosition, lettersWithKnownPosition = getAllLetterInfo()
-        print(f"knownletters: {knownLetters}",f"usedletters: {usedLetters}",f"usedletterswithunknownposition: {usedLettersWithUnknownPosition}",f"letterswithknownposition: {lettersWithKnownPosition}") #SuperDebugTool
+        #print(f"knownletters: {knownLetters}",f"usedletters: {usedLetters}",f"usedletterswithunknownposition: {usedLettersWithUnknownPosition}",f"letterswithknownposition: {lettersWithKnownPosition}") #SuperDebugTool
         remainingWordleWords=filterRemainingWords(originalWordList,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition)
         top5Words=rankRemainingWords(remainingWordleWords,originalWordList)
             #roundvalues in top5Words to 2 decimal places

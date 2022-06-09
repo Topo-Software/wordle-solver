@@ -273,7 +273,7 @@ def filterRemainingWords(allWordleWords,knownLetters,usedLetters,usedLettersWith
         remainingWordleWords = filterWordsAccordingToKnownPositions(remainingWordleWords,lettersWithKnownPosition)
         remainingWordleWords = filterWordsAccordingToAvailableLetters(remainingWordleWords,availableLetters)
         remainingWordleWords = filterWordsAccordingToKnownLetterPositions(remainingWordleWords,availableLettersWithPosition)
-        print(f"remainingWordleWords: {remainingWordleWords}")
+        #print(f"remainingWordleWords: {remainingWordleWords}")
         
         
     except Exception as e:
@@ -282,57 +282,65 @@ def filterRemainingWords(allWordleWords,knownLetters,usedLetters,usedLettersWith
 
     return remainingWordleWords
 
-def rankRemainingWords(remainingWordleWords,originalWordList):
+def refRankAllWords(originalWordList):
+    global normalizedLetterCountDict
+    global normalizedLetterMultiplesDict
+    letterCountDict = {}
+    normalizedLetterCountDict = {}
+    letterMultiplesArray = {}
+    normalizedLetterMultiplesDict = {}
+    wordScoreMultipleDict = {}
+
+    wordScoreDict = {}
+
+    for letter in alphabetLower:
+        letterCountDict[letter] = [0,0,0,0,0]
+
+    for word in originalWordList:
+        for index, letter in enumerate(word):
+            letterCountDict[letter][index] += 1
+
+    for letter in alphabetLower:
+        normalizedLetterCountDict[letter] = [0,0,0,0,0]
+        for index, count in enumerate(letterCountDict[letter]):
+            normalizedLetterCountDict[letter][index] = count/len(originalWordList)
+
+    #determine probability duplicate letters in remaining word list index is letter number of occurrences
+    for letter in alphabetLower:
+        letterMultiplesArray[letter] = [0,0,0,0,0]
+
+    for word in originalWordList:
+        for letter in word:
+            letterMultiplesArray[letter][word.count(letter)-1] += 1
+
+    # normalise letterMultiplesArray
+    for letter in alphabetLower:
+        normalizedLetterMultiplesDict[letter] = [0,0,0,0,0]
+        for index, count in enumerate(letterMultiplesArray[letter]):
+            normalizedLetterMultiplesDict[letter][index] = count/len(originalWordList)
+
+    #rate all words in remainingWordleWords return dictionary with word as key and score as value
+    for word in originalWordList:
+        score = 0
+        for index, letter in enumerate(word):
+            score += normalizedLetterCountDict[letter][index]
+        wordScoreDict[word] = score
+
+    #rate all words according to multiple of letter
+    for word in originalWordList:
+        score = 0
+        for index, letter in enumerate(word):
+            score += normalizedLetterMultiplesDict[letter][index]
+        wordScoreMultipleDict[word] = score
+
+
+def rankRemainingWords(remainingWordleWords):
     try:
         # Returns top 5 ranked words in a list
-
-        letterCountDict = {}
-        normalizedLetterCountDict = {}
-        letterMultiplesArray = {}
-        normalizedLetterMultiplesDict = {}
-        wordScoreDict = {}
-        wordScoreMultipleDict = {}
-        totalScoreDict = {}
-
-        for letter in alphabetLower:
-            letterCountDict[letter] = [0,0,0,0,0]
-
-        for word in originalWordList:
-            for index, letter in enumerate(word):
-                letterCountDict[letter][index] += 1
-
-        for letter in alphabetLower:
-            normalizedLetterCountDict[letter] = [0,0,0,0,0]
-            for index, count in enumerate(letterCountDict[letter]):
-                normalizedLetterCountDict[letter][index] = count/len(originalWordList)
-
-        #determine probability duplicate letters in remaining word list index is letter number of occurrences
-        for letter in alphabetLower:
-            letterMultiplesArray[letter] = [0,0,0,0,0]
-
-        for word in originalWordList:
-            for letter in word:
-                letterMultiplesArray[letter][word.count(letter)-1] += 1
-
-        # normalise letterMultiplesArray
-        for letter in alphabetLower:
-            normalizedLetterMultiplesDict[letter] = [0,0,0,0,0]
-            for index, count in enumerate(letterMultiplesArray[letter]):
-                normalizedLetterMultiplesDict[letter][index] = count/len(originalWordList)
-
-        #rate all words in remainingWordleWords return dictionary with word as key and score as value
-        for word in remainingWordleWords:
-            score = 0
-            for index, letter in enumerate(word):
-                score += normalizedLetterCountDict[letter][index]
-            wordScoreDict[word] = score
-
-        #rate all words according to multiple of letter
-        for word in remainingWordleWords:
-            score = 0
-            for index, letter in enumerate(word):
-                score += normalizedLetterMultiplesDict[letter][index]
-            wordScoreMultipleDict[word] = score
+        global totalScoreDict
+        global normalizedLetterCountDict
+        global normalizedLetterMultiplesDict
+        totalScoreDict={}
 
         for word in remainingWordleWords:
             for index, letter in enumerate(word):
@@ -372,7 +380,7 @@ def mainClickEvent():
         knownLetters, usedLetters, usedLettersWithUnknownPosition, lettersWithKnownPosition = getAllLetterInfo()
         #print(f"knownletters: {knownLetters}",f"usedletters: {usedLetters}",f"usedletterswithunknownposition: {usedLettersWithUnknownPosition}",f"letterswithknownposition: {lettersWithKnownPosition}") #SuperDebugTool
         remainingWordleWords=filterRemainingWords(originalWordList,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition)
-        top5Words=rankRemainingWords(remainingWordleWords,originalWordList)
+        top5Words=rankRemainingWords(remainingWordleWords)
             #roundvalues in top5Words to 2 decimal places
         for index, word in enumerate(top5Words):
             top5Words[index] = (word[0],round(word[1],2))
@@ -414,6 +422,7 @@ def resetAllClassLists():
             Element(elementName).element.classList.remove("bg-gray-200")
 
 ## Initialize wordle
+refRankAllWords(originalWordList)
 setAllCellsToGray()
 function_proxy = create_proxy(clickOnKeyBoardKey)
 function2_proxy = create_proxy(clickOnWordleCell)

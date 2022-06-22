@@ -1,5 +1,5 @@
-from time import time
-
+import time
+import asyncio
 from pyparsing import Word
 from js import document
 from pyodide import create_proxy
@@ -28,6 +28,12 @@ states = [['u','bg-gray-200'],['y','bg-yellow-400'],['g','bg-green-400']]
 def printToOutput(text):
     pyscript.write("output",text)
 
+async def printToOutput2(text):
+    Element("output2").element.classList.remove("invisible")
+    pyscript.write("output2",text)
+    await asyncio.sleep(2)
+    Element("output2").element.classList.add("invisible")
+
 #set all cells to gray
 def setAllCellsToGray():
     wordleArray[:,:,1]=states[0][0]
@@ -44,7 +50,7 @@ def getClassNameFromState(state):
         if state==stateName:
             return stateClass
 
-def clickOnKeyBoardKey(event):
+async def clickOnKeyBoardKey(event):
     #if clicked on a key
     try:
         if event.type == "keydown":
@@ -54,9 +60,9 @@ def clickOnKeyBoardKey(event):
 
         
         activeWordIndex,activeLetterIndex,lastLetter,submittedWord = getActiveWordAndLetterAndLast()
-        updateWordleArray(key,activeWordIndex,activeLetterIndex,lastLetter,submittedWord)
+        await updateWordleArray(key,activeWordIndex,activeLetterIndex,lastLetter,submittedWord)
         updateWordleScreen()
-        mainClickEvent()
+        await mainClickEvent()
     except Exception as e:
         print(e)
 
@@ -72,10 +78,11 @@ def validateKey(event):
         return key
     return
 
-def updateWordleArray(key,activeWordIndex,activeLetterIndex,lastLetter,submittedWord):
+async def updateWordleArray(key,activeWordIndex,activeLetterIndex,lastLetter,submittedWord):
     if key in alphabetUpper:
         if lastLetter and wordleArray[activeWordIndex][activeLetterIndex][0]!="":
-            return printToOutput("Press enter to submit the word")
+            await shakeAndPrintToOutput2(activeWordIndex,"Press Enter to submit the word")
+            return 
         wordleArray[activeWordIndex][activeLetterIndex][0]=key
     elif key=="backspace":
         if activeLetterIndex==0 and wordleArray[activeWordIndex][activeLetterIndex][0]=="":
@@ -91,9 +98,25 @@ def updateWordleArray(key,activeWordIndex,activeLetterIndex,lastLetter,submitted
                 wordConfirmedFunc(activeWordIndex)
                 #printToOutput("Word confirmed")
             else:
-                printToOutput("Word not found")
+                await shakeAndPrintToOutput2(activeWordIndex,"Word not found")
         else:
-            printToOutput("Not enough letters")
+            await printToOutput2("Not enough letters")
+
+async def shakeAndPrintToOutput2(activeWordIndex, text):
+    Element("output2").element.classList.remove("invisible")
+    pyscript.write("output2",text)
+    for letter in range(5):
+        elementName="wordle-cell-"+f"{activeWordIndex}"+"-"+f"{letter}"
+        Element(elementName).element.style.cssText="animation: shake 0.5s"
+        #wait for animation to finish
+    
+    
+    await asyncio.sleep(0.5)
+    Element("output2").element.classList.add("invisible")
+    for letter in range(5):
+        elementName="wordle-cell-"+f"{activeWordIndex}"+"-"+f"{letter}"
+        Element(elementName).element.style.cssText=""
+
 
 def wordConfirmedFunc(activeWordIndex):
     addClass(activeWordIndex,"font-bold")
@@ -127,9 +150,7 @@ def getActiveWordAndLetterAndLast():
                 lastLetter=True #set last letter to true
                 for letter in wordleArray[wordIndex]:
                     submitWord+=letter[0]
-                
                 submitWord=submitWord.lower()
-                
                 return wordIndex,letterIndex,lastLetter,submitWord #
             elif wordleArray[wordIndex][letterIndex][0]== "": #if letter is empty
                 return wordIndex, letterIndex, lastLetter,submitWord
@@ -202,14 +223,14 @@ def getGreenLettersAndPositions():
 
 ## Define word filters
 
-def filterWordsContainingAllKnownLetters(allWordleWords,knownLetters):
+async def filterWordsContainingAllKnownLetters(allWordleWords,knownLetters):
     filteredWordleWords=[]
     for word in allWordleWords:
         if all(letter in word for letter in knownLetters):
             filteredWordleWords.append(word)
     return filteredWordleWords
 
-def filterWordsAccordingToKnownPositions(remainingWordleWords,lettersWithKnownPosition):
+async def filterWordsAccordingToKnownPositions(remainingWordleWords,lettersWithKnownPosition):
     if lettersWithKnownPosition == ["","","","",""]:
         return remainingWordleWords
     filteredWordleWords=[]
@@ -225,14 +246,14 @@ def filterWordsAccordingToKnownPositions(remainingWordleWords,lettersWithKnownPo
             filteredWordleWords.append(word)
     return filteredWordleWords
 
-def filterWordsAccordingToAvailableLetters(remainingWordleWords,availableLetters):
+async def filterWordsAccordingToAvailableLetters(remainingWordleWords,availableLetters):
     filteredWordleWords=[]
     for word in remainingWordleWords:
         if all(letter in availableLetters for letter in word):
             filteredWordleWords.append(word)
     return filteredWordleWords
 
-def filterWordsAccordingToKnownLetterPositions(remainingWordleWords,availableLettersWithPosition): #green letter filter
+async def filterWordsAccordingToKnownLetterPositions(remainingWordleWords,availableLettersWithPosition): #green letter filter
     filteredWordleWords=[]
     for word in remainingWordleWords:
         allLettersAvailable=True
@@ -244,14 +265,14 @@ def filterWordsAccordingToKnownLetterPositions(remainingWordleWords,availableLet
     return filteredWordleWords
 
 ## Define helper functions
-def getAvailableLetters(knownLetters,usedLetters):
+async def getAvailableLetters(knownLetters,usedLetters):
     availableLetters=[]
     for letter in alphabetLower:
         if letter in knownLetters or letter not in usedLetters:
             availableLetters.append(letter.lower())
     return availableLetters
 
-def getAvailableLettersAccordingToPosition(usedLettersWithUnknownPosition):
+async def getAvailableLettersAccordingToPosition(usedLettersWithUnknownPosition):
     availableLetters=[[],[],[],[],[]]
     for letter in alphabetLower:
         for index, usedLetterArray in enumerate(usedLettersWithUnknownPosition):
@@ -263,16 +284,16 @@ def split(word):
     return [char for char in word]
 
 ## Filter wordle words
-def filterRemainingWords(allWordleWords,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition):
+async def filterRemainingWords(allWordleWords,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition):
     
     try:
-        availableLettersWithPosition = getAvailableLettersAccordingToPosition(usedLettersWithUnknownPosition)
+        availableLettersWithPosition = await getAvailableLettersAccordingToPosition(usedLettersWithUnknownPosition)
         #print(f"availableLettersWithPosition: {availableLettersWithPosition}")
-        availableLetters = getAvailableLetters(knownLetters,usedLetters)
-        remainingWordleWords = filterWordsContainingAllKnownLetters(allWordleWords,knownLetters)
-        remainingWordleWords = filterWordsAccordingToKnownPositions(remainingWordleWords,lettersWithKnownPosition)
-        remainingWordleWords = filterWordsAccordingToAvailableLetters(remainingWordleWords,availableLetters)
-        remainingWordleWords = filterWordsAccordingToKnownLetterPositions(remainingWordleWords,availableLettersWithPosition)
+        availableLetters = await getAvailableLetters(knownLetters,usedLetters)
+        remainingWordleWords = await filterWordsContainingAllKnownLetters(allWordleWords,knownLetters)
+        remainingWordleWords = await filterWordsAccordingToKnownPositions(remainingWordleWords,lettersWithKnownPosition)
+        remainingWordleWords = await filterWordsAccordingToAvailableLetters(remainingWordleWords,availableLetters)
+        remainingWordleWords = await filterWordsAccordingToKnownLetterPositions(remainingWordleWords,availableLettersWithPosition)
         #print(f"remainingWordleWords: {remainingWordleWords}")
         
         
@@ -365,21 +386,21 @@ def rankRemainingWords(remainingWordleWords):
         print(e)
 
 ## Main
-def clickOnWordleCell(pointerevent):
+async def clickOnWordleCell(pointerevent):
     try:
         cellRowIndex= int(pointerevent.target.id.replace("wordle-cell-","")[0])
         cellColumnIndex= int(pointerevent.target.id[-1])
         toggleCellThroughStates(cellRowIndex,cellColumnIndex)
-        mainClickEvent()
+        await mainClickEvent()
     except Exception as e:
         print(f"Error clicking on wordle cell: {e}")
         print(e)
 
-def mainClickEvent():
+async def mainClickEvent():
     try:
         knownLetters, usedLetters, usedLettersWithUnknownPosition, lettersWithKnownPosition = getAllLetterInfo()
         #print(f"knownletters: {knownLetters}",f"usedletters: {usedLetters}",f"usedletterswithunknownposition: {usedLettersWithUnknownPosition}",f"letterswithknownposition: {lettersWithKnownPosition}") #SuperDebugTool
-        remainingWordleWords=filterRemainingWords(originalWordList,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition)
+        remainingWordleWords= await filterRemainingWords(originalWordList,knownLetters,usedLetters,usedLettersWithUnknownPosition,lettersWithKnownPosition)
         top5Words=rankRemainingWords(remainingWordleWords)
             #roundvalues in top5Words to 2 decimal places
         for index, word in enumerate(top5Words):
@@ -411,6 +432,7 @@ def clearButtonEvent(event):
     resetAllClassLists()
     setAllCellsToGray()
     printToOutput("")
+    printToOutput2("")
     updateWordleScreen()
 
 def resetAllClassLists():
@@ -421,13 +443,34 @@ def resetAllClassLists():
             Element(elementName).element.classList.remove("bg-green-400")
             Element(elementName).element.classList.remove("bg-gray-200")
 
+async def shakeActiveWordTiles(activeWordIndex):
+    for letter in range(5):
+        elementName="wordle-cell-"+f"{activeWordIndex}"+"-"+f"{letter}"
+        Element(elementName).element.style.cssText="animation: shake 0.5s"
+        #wait for animation to finish
+    await asyncio.sleep(0.5)
+    print("sleeping")
+    for letter in range(5):
+        elementName="wordle-cell-"+f"{activeWordIndex}"+"-"+f"{letter}"
+        Element(elementName).element.style.cssText=""
+
+
+
+
+
+async def initWordle(originalWordList):
+    refRankAllWords(originalWordList)
+    setAllCellsToGray()
+
+# function_proxy, function2_proxy, function3_proxy = await initWordle(originalWordList, setAllCellsToGray, clickOnKeyBoardKey, refRankAllWords, clickOnWordleCell, clearButtonEvent)
 ## Initialize wordle
-refRankAllWords(originalWordList)
-setAllCellsToGray()
+pyscript.run_until_complete(initWordle(originalWordList))
+pyscript_loader.close()
+
+
 function_proxy = create_proxy(clickOnKeyBoardKey)
 function2_proxy = create_proxy(clickOnWordleCell)
 function3_proxy = create_proxy(clearButtonEvent)
-
 ### Build keyboard
 keyboard = []
 for key in alphabetUpper:

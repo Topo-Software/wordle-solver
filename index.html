@@ -23,7 +23,19 @@
         font-family: 'Quicksand';
         background-color: #F7F7F6;
     }
-
+    @keyframes shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(3px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(3px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
     </style>
 </head>
 
@@ -55,7 +67,7 @@
                     document.getElementById("wordle-array").appendChild(wordleArray[i]);
                     for (var j = 0; j < 5; j++) {
                         wordleArray[i][j] = document.createElement("button");
-                        wordleArray[i][j].className = "border w-12 h-12 m-0.5 text-center bg-gray-200";
+                        wordleArray[i][j].className = "border w-10 h-10 m-0.5 text-center bg-gray-200";
                         wordleArray[i][j].id = "wordle-cell-" + i + "-" + j;
                         document
                             .getElementById("wordle-word-" + i)
@@ -65,7 +77,7 @@
             </script>
         </div>
         <div id="output" class="flex flex-col justify-center items-center p-3 h-2 empty:h-2 font-semibold"></div>
-        
+        <div id="output2" class="flex flex-col justify-center items-center p-3 h-2 empty:h-2 font-semibold invisible text-red-500"></div>
         <!-- keyboard that sticks to bottom of the screen -->
         <div id="keyboard" class="flex flex-col justify-center items-center p-3 mb-3">
             <script>
